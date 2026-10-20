@@ -1,3 +1,5 @@
+import 'dart:ui' show Brightness;
+
 import 'package:fl_clash/common/tray.dart';
 import 'package:test/test.dart';
 
@@ -9,48 +11,111 @@ void main() {
 
     test('windows loads ico files from the windows directory', () {
       expect(
-        windows.getTrayIcon(isStart: false, tunEnable: false, safeMode: false),
+        windows.getTrayIcon(
+          isStart: false,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.dark,
+        ),
         'assets/images/tray/windows/status_1.ico',
       );
       expect(
-        windows.getTrayIcon(isStart: true, tunEnable: false, safeMode: false),
+        windows.getTrayIcon(
+          isStart: true,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.dark,
+        ),
         'assets/images/tray/windows/status_2.ico',
       );
       expect(
-        windows.getTrayIcon(isStart: true, tunEnable: true, safeMode: false),
+        windows.getTrayIcon(
+          isStart: true,
+          tunEnable: true,
+          safeMode: false,
+          brightness: Brightness.dark,
+        ),
         'assets/images/tray/windows/status_3.ico',
       );
     });
 
     test('linux loads png files from the unix directory', () {
       expect(
-        linux.getTrayIcon(isStart: false, tunEnable: false, safeMode: false),
+        linux.getTrayIcon(
+          isStart: false,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.dark,
+        ),
         'assets/images/tray/unix/status_1.png',
       );
       expect(
-        linux.getTrayIcon(isStart: true, tunEnable: false, safeMode: false),
+        linux.getTrayIcon(
+          isStart: true,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.dark,
+        ),
         'assets/images/tray/unix/status_2.png',
       );
       expect(
-        linux.getTrayIcon(isStart: true, tunEnable: true, safeMode: false),
+        linux.getTrayIcon(
+          isStart: true,
+          tunEnable: true,
+          safeMode: false,
+          brightness: Brightness.dark,
+        ),
         'assets/images/tray/unix/status_3.png',
       );
     });
 
+    test('the idle icon follows the system brightness', () {
+      expect(
+        windows.getTrayIcon(
+          isStart: false,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.light,
+        ),
+        'assets/images/tray/windows/status_1_b.ico',
+      );
+      expect(
+        linux.getTrayIcon(
+          isStart: false,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.light,
+        ),
+        'assets/images/tray/unix/status_1_b.png',
+      );
+      expect(
+        windows.getTrayIcon(
+          isStart: true,
+          tunEnable: false,
+          safeMode: false,
+          brightness: Brightness.light,
+        ),
+        'assets/images/tray/windows/status_2.ico',
+      );
+    });
+
     test('macOS keeps the template icon in every state', () {
-      for (final (isStart, tunEnable) in [
-        (false, false),
-        (true, false),
-        (true, true),
-      ]) {
-        expect(
-          macOS.getTrayIcon(
-            isStart: isStart,
-            tunEnable: tunEnable,
-            safeMode: false,
-          ),
-          'assets/images/tray/macos/status_1.png',
-        );
+      for (final brightness in Brightness.values) {
+        for (final (isStart, tunEnable) in [
+          (false, false),
+          (true, false),
+          (true, true),
+        ]) {
+          expect(
+            macOS.getTrayIcon(
+              isStart: isStart,
+              tunEnable: tunEnable,
+              safeMode: false,
+              brightness: brightness,
+            ),
+            'assets/images/tray/macos/status_1.png',
+          );
+        }
       }
     });
 
@@ -65,6 +130,7 @@ void main() {
             isStart: isStart,
             tunEnable: tunEnable,
             safeMode: true,
+            brightness: Brightness.light,
           ),
           'assets/images/tray/windows/status_4.ico',
         );
@@ -73,6 +139,7 @@ void main() {
             isStart: isStart,
             tunEnable: tunEnable,
             safeMode: true,
+            brightness: Brightness.light,
           ),
           'assets/images/tray/unix/status_4.png',
         );
@@ -81,6 +148,7 @@ void main() {
             isStart: isStart,
             tunEnable: tunEnable,
             safeMode: true,
+            brightness: Brightness.light,
           ),
           'assets/images/tray/macos/status_4.png',
         );
