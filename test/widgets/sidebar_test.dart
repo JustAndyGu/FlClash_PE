@@ -166,7 +166,7 @@ void main() {
       ),
     );
 
-    expect(tester.getSize(_sidebarFinder).width, 48);
+    expect(tester.getSize(_sidebarFinder).width, 56);
     expect(_labelOpacities(tester, 'Proxies'), [0]);
     expect(_rowTooltip('Proxies'), findsOneWidget);
     await tester.tap(_glyph(AppGlyphs.profiles));
@@ -180,7 +180,7 @@ void main() {
     await tester.pumpWidget(_sidebar(onToggle: () {}));
     await tester.pump(const Duration(milliseconds: 120));
     final width = tester.getSize(_sidebarFinder).width;
-    expect(width, allOf(greaterThan(48), lessThan(220)));
+    expect(width, allOf(greaterThan(56), lessThan(220)));
     expect(tester.takeException(), isNull);
 
     await tester.pumpAndSettle();
@@ -287,7 +287,7 @@ void main() {
 
       await openOverlay(tester);
 
-      expect(tester.getSize(_sidebarFinder).width, 48);
+      expect(tester.getSize(_sidebarFinder).width, 56);
       expect(
         tester.getSize(find.byKey(const ValueKey('content'))).width,
         contentWidth,
@@ -318,7 +318,7 @@ void main() {
         _sidebar(expanded: false, safePadding: safePadding),
       );
       final sidebar = tester.getRect(_sidebarFinder);
-      expect(sidebar.width, 48 + safePadding.left);
+      expect(sidebar.width, 56 + safePadding.left);
       final toggle = tester.getTopLeft(find.byTooltip('Expand'));
       expect(toggle.dx, greaterThanOrEqualTo(sidebar.left + safePadding.left));
       expect(toggle.dy, greaterThanOrEqualTo(sidebar.top + safePadding.top));

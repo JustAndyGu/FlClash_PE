@@ -11,7 +11,7 @@ import 'package:fl_clash/ui/typography.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _compactWidth = 48.0;
+const _compactWidth = 56.0;
 const _expandedWidth = 220.0;
 const _itemSize = 40.0;
 const _itemGap = 4.0;
