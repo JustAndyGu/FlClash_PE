@@ -8,8 +8,8 @@ Based on the upstream project, this fork focuses on personal tweaks and customiz
 ## Changes
 
 - **System Tray Icon:** The upstream project's system tray icon is relatively small, and the differences between its various states are not sufficiently noticeable. Therefore, it has been redesigned to more closely resemble the style of earlier versions (before v0.8.8*), with added support for adapting to the OS theme.
-- **Dashboard:** Dashboard widgets can now be edited and removed at any window size. By removing components and adjusting their positions, the dashboard can be restored to a layout and interaction style similar to the MD design used in earlier versions (v0.8.98 and earlier). The layout is also more suitable for smaller window size.
-- **Sidebar:** The width of the collapsed sidebar has been increased slightly. Previously, the sidebar was not sufficiently prominent, and its display area and clickable area were somewhat small.
+- **Dashboard:** Dashboard widgets can now be edited and removed at any window size. By removing components and adjusting their positions, the dashboard can be restored to a layout and interaction style similar to those in earlier versions (v0.8.98 and earlier). The layout is also more suitable for smaller window size.
+- **Sidebar:** The hover area of the menu icon on the collapsed sidebar has been increased slightly. Previously, the menu icon was not sufficiently prominent, and its display area and clickable area were somewhat small. And this is also more suitable for smaller window size.
 - **i18n:** Korean, French, and Spanish language support has been removed. Personally, I believe these regions have very limited use cases for this software, and supporting too many languages is unnecessary.
 
 ## Preview
