@@ -260,7 +260,7 @@ void main() {
           )
           .first,
     );
-    expect(selectedItem.size, const Size(54, 40));
+    expect(selectedItem.size, const Size(54, 48));
     expect(selectedItem.center.dx, sidebar.center.dx);
 
     final folder = tester.getCenter(_glyph(AppGlyphs.profiles));
