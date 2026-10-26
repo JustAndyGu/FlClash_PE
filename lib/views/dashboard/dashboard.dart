@@ -47,14 +47,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final platform = widget.platform ?? SupportPlatform.currentPlatform;
-    final viewSize = ref.watch(viewSizeProvider);
-    final sideWidth = ref.watch(sideWidthProvider);
     final scale = math.max(1.0, MediaQuery.textScalerOf(context).scale(1));
-    final size = Size(viewSize.width - sideWidth, viewSize.height) / scale;
-    final editable = !DashboardDensity.of(size).isDesktop;
-    if (!editable) {
-      _editing = false;
-    }
     final editing = _editing;
     final gap = cardSpacingOf(context, ref.watch(viewModeProvider));
     final appLocalizations = context.appLocalizations;
@@ -72,7 +65,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             )
           : null,
       iconActions: [
-        if (editable && !editing)
+        if (!editing)
           IconButtonData(
             glyph: AppGlyphs.edit,
             tooltip: appLocalizations.editDashboard,
@@ -84,21 +77,24 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
         builder: (context, constraints) {
           final room = constraints.biggest / scale;
           final layout = DashboardDensity.of(room);
+          // Editing always uses the card column, however wide the window is,
+          // so the width a card is dragged at stays the one it is read at.
+          final column = editing || !layout.isDesktop;
           return DashboardDensityScope(
-            density: layout,
+            density: column ? DashboardDensity.mobile : layout,
             scale: scale,
-            child: layout.isDesktop
-                ? _DesktopDashboard(
-                    platform: platform,
-                    columns: dashboardColumnsOf(room.width),
-                    gap: gap,
-                  )
-                : _MobileDashboard(
+            child: column
+                ? _MobileDashboard(
                     platform: platform,
                     gap: gap,
                     editing: editing,
                     cardKeyOf: _cardKeyOf,
                     onDone: () => _setEditing(false),
+                  )
+                : _DesktopDashboard(
+                    platform: platform,
+                    columns: dashboardColumnsOf(room.width),
+                    gap: gap,
                   ),
           );
         },
@@ -107,10 +103,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 }
 
-/// Four columns fill the window, the tables taking what the rows above them
-/// leave. A window too short for the tables, and every two column one, gets
+/// The cards follow the saved order, each taking the width its row gives it, so
+/// a card moved in the editor moves here too. Cards of one height share a row,
+/// and the two tables close the page: they are what takes the height the cards
+/// above them leave. A window too short for them, and the two column one, gets
 /// the summary cards instead, so no list scrolls inside a page that scrolls.
-class _DesktopDashboard extends StatelessWidget {
+class _DesktopDashboard extends ConsumerWidget {
   const _DesktopDashboard({
     required this.platform,
     required this.columns,
@@ -122,7 +120,7 @@ class _DesktopDashboard extends StatelessWidget {
   final double gap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final density = DashboardDensityScope.of(context);
     final compact = density.isCompact;
     final scale = DashboardDensityScope.scaleOf(context);
@@ -137,6 +135,9 @@ class _DesktopDashboard extends StatelessWidget {
     final middleHeight = (compact ? 152 : 176) * scale;
     final tablesHeight = connectionsTableMinHeight(density, scale);
     final summaryHeight = (compact ? 112 : 120) * scale;
+    final saved = ref.watch(
+      dashboardStateProvider.select((state) => state.dashboardWidgets),
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final room =
@@ -147,104 +148,139 @@ class _DesktopDashboard extends StatelessWidget {
           start: base.start + inset,
           end: base.end + inset,
         );
-        double span(int columns) => column * columns + gap * (columns - 1);
-        Widget row(List<(int, Widget)> cards) => Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: gap,
-          children: [
-            for (final (columns, card) in cards)
-              SizedBox(
-                width: span(columns),
-                child: RepaintBoundary(child: card),
-              ),
-          ],
-        );
-        Widget sized(double height, Widget child) =>
-            SizedBox(height: height, child: child);
-        final switches =
-            DashboardWidget.networkTakeover.platforms.contains(platform)
-            ? const [
-                (1, NetworkTakeoverTile(TakeoverSwitch.systemProxy)),
-                (1, NetworkTakeoverTile(TakeoverSwitch.tun)),
-              ]
-            : const [(2, VpnTile())];
-        final half = columns ~/ 2;
-        final summaries = row([
-          (half, const ConnectionStatsCard()),
-          (half, const ProxyGroupsSummaryCard()),
-        ]);
-        if (columns == 2) {
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: padding,
-            child: Column(
-              spacing: gap,
-              children: [
-                sized(
-                  topHeight,
-                  const RepaintBoundary(child: CurrentOutboundCard()),
+        double span(int units) => column * units + gap * (units - 1);
+        // A row always spans the whole grid, so a short one hands what it has
+        // left to its last card instead of leaving a hole.
+        Widget row(List<(int, Widget)> cells) {
+          final used = cells.fold(0, (sum, cell) => sum + cell.$1);
+          final spare = columns - used;
+          final last = cells.length - 1;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: gap,
+            children: [
+              for (var index = 0; index < cells.length; index++)
+                SizedBox(
+                  width: span(cells[index].$1 + (index == last ? spare : 0)),
+                  child: RepaintBoundary(child: cells[index].$2),
                 ),
-                sized(
-                  topHeight,
-                  row(const [
-                    (1, SpeedCard(direction: TrafficDirection.upload)),
-                    (1, SpeedCard(direction: TrafficDirection.download)),
-                  ]),
-                ),
-                sized(
-                  controlHeight,
-                  const RepaintBoundary(child: OutboundModeBar()),
-                ),
-                sized(controlHeight, row(switches)),
-                sized(
-                  middleHeight,
-                  row(const [(1, IntranetIpCard()), (1, ProfilesCard())]),
-                ),
-                sized(
-                  middleHeight,
-                  row(const [(1, ServiceStatusCard()), (1, MemoryInfo())]),
-                ),
-                sized(summaryHeight, summaries),
-              ],
-            ),
+            ],
           );
         }
-        final rows = [
-          sized(
-            topHeight,
-            row(const [
-              (2, CurrentOutboundCard()),
-              (1, SpeedCard(direction: TrafficDirection.upload)),
-              (1, SpeedCard(direction: TrafficDirection.download)),
-            ]),
-          ),
-          sized(
-            controlHeight,
-            row([(2, const OutboundModeBar()), ...switches]),
-          ),
-          sized(
-            middleHeight,
-            row([
-              (1, const IntranetIpCard()),
-              (1, const ProfilesCard()),
-              (
+
+        final ordered = <(int, double, Widget)>[];
+        final tables = <DashboardWidget>[];
+        var listedMemory = false;
+        for (final widget in saved) {
+          if (!widget.platforms.contains(platform)) {
+            continue;
+          }
+          switch (widget) {
+            case DashboardWidget.currentOutbound:
+              ordered.add((2, topHeight, const CurrentOutboundCard()));
+            case DashboardWidget.networkSpeed:
+              ordered.add((2, topHeight, _SpeedPair(gap: gap)));
+            case DashboardWidget.outboundMode:
+              ordered.add((2, controlHeight, const OutboundModeBar()));
+            case DashboardWidget.vpnButton:
+              ordered.add((2, controlHeight, const VpnTile()));
+            case DashboardWidget.networkTakeover:
+              ordered.add((2, controlHeight, _TakeoverPair(gap: gap)));
+            case DashboardWidget.intranetIp:
+              ordered.add((1, middleHeight, const IntranetIpCard()));
+            case DashboardWidget.profiles:
+              ordered.add((1, middleHeight, const ProfilesCard()));
+            case DashboardWidget.serviceStatus:
+              ordered.add((
                 1,
+                middleHeight,
                 ServiceStatusCard(
                   columns: column >= _servicePairColumnMin * scale ? 2 : 1,
                 ),
+              ));
+            case DashboardWidget.memoryInfo:
+              listedMemory = true;
+              ordered.add((1, middleHeight, const MemoryInfo()));
+            case DashboardWidget.proxyGroups:
+            case DashboardWidget.connectionStats:
+              tables.add(widget);
+          }
+        }
+        // The memory card was never among the phone's defaults, yet the grid
+        // has always carried it, so it stays whether or not it is listed.
+        if (!listedMemory) {
+          ordered.add((1, middleHeight, const MemoryInfo()));
+        }
+
+        final cards = <Widget>[];
+        var cardsHeight = 0.0;
+        var line = <(int, Widget)>[];
+        var used = 0;
+        var lineHeight = 0.0;
+        for (final (units, height, card) in ordered) {
+          // A card keeps its own height, so a height change ends a row as
+          // surely as a full one does.
+          final full = used + units > columns;
+          if (line.isNotEmpty && (full || height != lineHeight)) {
+            cards.add(SizedBox(height: lineHeight, child: row(line)));
+            cardsHeight += lineHeight + gap;
+            line = [];
+            used = 0;
+          }
+          line.add((units, card));
+          used += units;
+          lineHeight = height;
+        }
+        if (line.isNotEmpty) {
+          cards.add(SizedBox(height: lineHeight, child: row(line)));
+          cardsHeight += lineHeight + gap;
+        }
+        final rowsHeight = padding.vertical + cardsHeight;
+
+        final hasStats = tables.contains(DashboardWidget.connectionStats);
+        final hasGroups = tables.contains(DashboardWidget.proxyGroups);
+        Widget summaries() {
+          final cells = <(int, Widget)>[];
+          if (hasStats) {
+            final units = hasGroups ? columns ~/ 2 : columns;
+            cells.add((units, const ConnectionStatsCard()));
+          }
+          if (hasGroups) {
+            final units = hasStats ? columns - columns ~/ 2 : columns;
+            cells.add((units, const ProxyGroupsSummaryCard()));
+          }
+          return row(cells);
+        }
+
+        Widget tablesRow() => Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: gap,
+          children: [
+            if (hasStats)
+              const Expanded(
+                flex: 3,
+                child: RepaintBoundary(child: ConnectionsTableCard()),
               ),
-              (1, const MemoryInfo()),
-            ]),
-          ),
-        ];
-        final rowsHeight =
-            padding.vertical +
-            topHeight +
-            controlHeight +
-            middleHeight +
-            gap * 3;
-        final tablesFit = constraints.maxHeight >= rowsHeight + tablesHeight;
-        final fills = constraints.maxHeight >= rowsHeight + summaryHeight;
+            if (hasGroups)
+              const Expanded(
+                flex: 2,
+                child: RepaintBoundary(child: ProxyGroupsCard()),
+              ),
+          ],
+        );
+
+        final hasTables = hasStats || hasGroups;
+        final tablesFit =
+            hasTables &&
+            columns != 2 &&
+            constraints.maxHeight >= rowsHeight + tablesHeight;
+        final summaryFit =
+            hasTables &&
+            columns != 2 &&
+            constraints.maxHeight >= rowsHeight + summaryHeight;
+        // A filling bottom row is Expanded, so the page must be pinned to the
+        // viewport height whenever one is added.
+        final fills = tablesFit || summaryFit;
         return SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: SizedBox(
@@ -254,36 +290,71 @@ class _DesktopDashboard extends StatelessWidget {
               child: Column(
                 spacing: gap,
                 children: [
-                  ...rows,
+                  ...cards,
                   if (tablesFit)
-                    Expanded(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        spacing: gap,
-                        children: const [
-                          Expanded(
-                            flex: 3,
-                            child: RepaintBoundary(
-                              child: ConnectionsTableCard(),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: RepaintBoundary(child: ProxyGroupsCard()),
-                          ),
-                        ],
-                      ),
-                    )
-                  else if (fills)
-                    Expanded(child: summaries)
-                  else
-                    sized(summaryHeight, summaries),
+                    Expanded(child: tablesRow())
+                  else if (summaryFit)
+                    Expanded(child: summaries())
+                  else if (hasTables)
+                    SizedBox(height: summaryHeight, child: summaries()),
                 ],
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+class _SpeedPair extends StatelessWidget {
+  const _SpeedPair({required this.gap});
+
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: gap,
+      children: const [
+        Expanded(
+          child: RepaintBoundary(
+            child: SpeedCard(direction: TrafficDirection.upload),
+          ),
+        ),
+        Expanded(
+          child: RepaintBoundary(
+            child: SpeedCard(direction: TrafficDirection.download),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TakeoverPair extends StatelessWidget {
+  const _TakeoverPair({required this.gap});
+
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: gap,
+      children: const [
+        Expanded(
+          child: RepaintBoundary(
+            child: NetworkTakeoverTile(TakeoverSwitch.systemProxy),
+          ),
+        ),
+        Expanded(
+          child: RepaintBoundary(
+            child: NetworkTakeoverTile(TakeoverSwitch.tun),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -197,6 +197,8 @@ class _DashboardEditorState extends ConsumerState<DashboardEditor>
                       item: card,
                       cardKey: widget.cardKeyOf(card),
                       index: index,
+                      dragImmediately:
+                          widget.platform != SupportPlatform.Android,
                       sway: sway,
                       onRemove: card.removable ? () => _remove(card) : null,
                     ),
@@ -406,6 +408,7 @@ class _EditableCard extends StatelessWidget {
     required this.item,
     required this.cardKey,
     required this.index,
+    required this.dragImmediately,
     required this.sway,
     required this.onRemove,
   });
@@ -413,6 +416,7 @@ class _EditableCard extends StatelessWidget {
   final DashboardWidget item;
   final GlobalKey cardKey;
   final int index;
+  final bool dragImmediately;
   final Animation<double>? sway;
   final VoidCallback? onRemove;
 
@@ -426,7 +430,13 @@ class _EditableCard extends StatelessWidget {
     final content = Stack(
       fit: StackFit.passthrough,
       children: [
-        ReorderableDelayedDragStartListener(index: index, child: card),
+        // A finger holds a card before dragging it, because a plain drag is how
+        // the list scrolls; a mouse has no such gesture, and waiting for a hold
+        // reads as a card that will not move.
+        if (dragImmediately)
+          ReorderableDragStartListener(index: index, child: card)
+        else
+          ReorderableDelayedDragStartListener(index: index, child: card),
         if (onRemove != null)
           PositionedDirectional(
             top: 0,
