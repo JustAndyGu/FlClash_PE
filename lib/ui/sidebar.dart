@@ -11,9 +11,12 @@ import 'package:fl_clash/ui/typography.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _compactWidth = 48.0;
+/// The collapsed pane is the row's own tap target plus this margin on each
+/// side, so growing the button grows the pane with it.
+const _itemSize = 48.0;
+const _compactMargin = 4.0;
+const _compactWidth = _itemSize + _compactMargin * 2;
 const _expandedWidth = 220.0;
-const _itemSize = 40.0;
 const _itemGap = 4.0;
 const _toggleGap = 8.0;
 const _verticalInset = 4.0;
