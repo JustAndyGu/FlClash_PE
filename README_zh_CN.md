@@ -1,135 +1,54 @@
-<div align="center">
+# FlClash_PE
 
-<img src="assets/images/icon.png" alt="FlClash" width="88">
+[English](README.md)
 
-# FlClash
+PE，意思是 **Personal Edition（个人版）**。  
+本Fork基于上游项目，根据个人偏好对界面和功能进行定制与调整。
 
-基于 ClashMeta 的多平台代理客户端，简单易用，开源无广告。
+## 已做出的修改
 
-[English](README.md) · **简体中文**
+- **托盘图标：** ~~上游项目的托盘图标尺寸较小，且不同状态间的差异也不够明显。~~ 上游项目在v0.9.2将托盘图标恢复为了早期版本样式。 因此，将其重新设计为更接近早期版本(v0.8.7*之前)的风格，并且加入适配系统主题效果。
+- **仪表盘：** 现在可以在任意窗口尺寸下编辑移除仪表盘组件。通过移除和调整位置，仪表盘能恢复成类似前期版本(v0.8.98及之前)的风格布局和交互习惯，对小尺寸的窗口大小更加友好。
+- **侧边栏：** 略微增加收缩状态下侧边栏中菜单图标填充大小。之前的菜单图标不够明显，展示和点击区域有点小。修改后对小尺寸的窗口大小更加友好。
+- **i18n：** 韩语法语和西班牙语支持已被移除。个人觉得这些区域几乎没有本软件的使用场景，过多的语言支持并没有必要。
 
-[![Release](https://img.shields.io/github/v/release/chen08209/FlClash?style=flat-square&label=release)](https://github.com/chen08209/FlClash/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/chen08209/FlClash/total?style=flat-square&logo=github)](https://github.com/chen08209/FlClash/releases)
-[![License](https://img.shields.io/github/license/chen08209/FlClash?style=flat-square)](LICENSE)
-[![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/FlClash)
+## 效果预览
 
-[官网](https://chen08209.github.io/FlClash/zh) · [下载](#下载) · [更新日志](CHANGELOG.md) · [从源码构建](#从源码构建)
-
-</div>
+以下截图展示了仪表盘与侧边栏调整后的效果。
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="snapshots/preview-dark.png">
-    <img alt="FlClash 在 MacBook 与手机上的仪表盘" src="snapshots/preview.png" width="92%">
+    <source media="(prefers-color-scheme: dark)" srcset="snapshots/preview.png">
+    <img alt="FlClash_PE 调整后的仪表盘与侧边栏" src="snapshots/preview-dark.png" width="92%">
   </picture>
 </p>
 
-## 功能
+## ToDo
 
-- **一个应用覆盖 Android、Windows、macOS 和 Linux**，桌面端同时提供 x64 与 ARM64 版本。
-- **mihomo（Clash.Meta）内核**：规则分流、代理组、延迟测试、系统代理与 TUN 模式。
-- **配置管理**：通过订阅链接或文件导入配置，内置编辑器，支持覆写脚本以及自定义规则、代理和代理组。
-- **实时查看**连接、请求、DNS 查询和日志。
-- **Material You 设计，融合 Apple 式交互**：支持动态取色、浅色与深色主题，连续曲率圆角，弹出面板可在几档高度间吸附，布局随屏幕从手机到桌面自适应。
-- **备份与恢复**：通过 WebDAV 或本地文件。
-- **平台细节**：Android 上有快捷设置磁贴、分应用代理和 Android TV 支持；桌面端有托盘菜单和全局快捷键。
-- **开源无广告**，以 GPL-3.0 协议发布。
+- [ ] **优化配置页面布局**
 
-## 下载
+  新版本(v0.9.1及之后)中部分实用信息被移除。计划重新调整配置页面布局，使用新版的样式和交互，恢复部分前期版本信息展示。  
+  优先级中，现在的界面也很好看。
 
-从 [GitHub Releases](https://github.com/chen08209/FlClash/releases/latest) 获取最新版本，或打开
-[官网](https://chen08209.github.io/FlClash/zh#download)，它会自动为你的设备选好安装包。
+- [ ] **优化启动按钮**
 
-| 平台 | 安装包 | 说明 |
-| --- | --- | --- |
-| Android | `arm64-v8a`、`armeabi-v7a`、`x86_64` 三种 APK | 绝大多数手机选 `arm64-v8a`。也可以通过下方的 F-Droid 仓库安装。 |
-| Windows 10 及以上 | 安装版（`.exe`）或便携版（`.zip`），分 x64 与 ARM64 | 骁龙等 ARM 架构笔记本选 ARM64。 |
-| macOS 12 及以上 | Apple Silicon 与 Intel 两种 DMG | 也可以通过 Homebrew 安装。 |
-| Linux | `.deb`、`.rpm` 和 AppImage，分 x64 与 ARM64 | 托盘依赖见下方说明。 |
+  新版(v0.9.1及之后)仪表盘中的启动按钮不够明显，点击操作也不够方便。不过，上游作者的设计考虑也是合理的：随着 UI 的演进，采用 MD 风格的悬浮操作按钮（Floating Action Button）已经不太符合新版界面的整体设计语言。  
+  优先级中，目前仍在考虑如何兼顾操作体验与设计一致性。
 
-<p>
-  <a href="https://chen08209.github.io/FlClash-fdroid-repo/repo?fingerprint=789D6D32668712EF7672F9E58DEEB15FBD6DCEEC5AE7A4371EA72F2AAE8A12FD"><img alt="Get it on F-Droid" src="snapshots/get-it-on-fdroid.svg" height="56"></a>
-  <a href="https://github.com/chen08209/FlClash/releases/latest"><img alt="Get it on GitHub" src="snapshots/get-it-on-github.svg" height="56"></a>
-</p>
+- [ ] **优化测试与跳转按钮**
 
-**Homebrew**
+  与启动按钮类似，新版本(v0.9.1及之后)中代理页的测试和跳转按钮在操作便利性方面有所下降。  
+  优先级中，目前仍在探索能够改善使用体验，同时又不破坏整体设计风格的方案。
 
-```bash
-brew tap chen08209/tap
-brew install --cask flclash
-```
+- [ ] **恢复 Material Design 风格**
 
-**Linux 托盘图标**
+  个人更喜欢 Material You 设计风格。不过，恢复这一风格需要大量开发工作，并且随着上游项目持续更新，后续兼容和维护的成本会不断上升。  
+  因此，这项工作只能列为低优先级。
 
-`.deb` 安装包会自动安装所需依赖。使用 AppImage 或 `.rpm` 时，需要先安装 AyatanaAppIndicator 库，托盘图标才能显示：
+## 其他说明
 
-```bash
-sudo apt-get install libayatana-appindicator3-1   # Debian 与 Ubuntu
-sudo dnf install libayatana-appindicator-gtk3     # Fedora
-```
-
-**无人值守的桌面环境**
-
-FlClash 要在免责声明被接受后才会启动核心。在容器等无人点击的环境里，可在应用的环境变量中设置
-`FLCLASH_ACCEPT_DISCLAIMER=1`，首次启动时即视为接受。
-
-## 使用
-
-**通过链接导入配置。** 打开下面格式的链接，即可把订阅导入 FlClash。`clashmeta://` 和 `flclash://` 开头的链接同样可用。
-
-```text
-clash://install-config?url=<经过 URL 编码的订阅链接>
-```
-
-**Android 自动化。** Tasker、MacroDroid 等应用可以用下面的 Action 启动 Activity，从而启动、停止或切换代理：
-
-```text
-com.follow.clash.action.START
-com.follow.clash.action.STOP
-com.follow.clash.action.TOGGLE
-```
-
-在电脑上也可以通过 adb 触发：
-
-```bash
-adb shell am start -a com.follow.clash.action.TOGGLE
-```
-
-## 从源码构建
-
-需要 [Flutter](https://docs.flutter.dev/get-started/install) 3.47（正式版构建使用 3.47.6）、[Go](https://go.dev/dl/) 1.27，
-以及通过 rustup 安装的 [Rust](https://rustup.rs/)。桌面端需要在对应系统上构建，Android 在任意系统上都能构建。
-
-```bash
-git clone --recursive https://github.com/chen08209/FlClash.git
-cd FlClash
-flutter pub get
-dart setup.dart android   # 或 windows、macos、linux
-```
-
-安装包输出到 `dist/`。Go 内核和 Rust 库会在 Flutter 构建过程中一并编译。
-
-| 平台 | 额外依赖 |
-| --- | --- |
-| Android | 带 NDK 的 Android SDK。加上 `--arch arm64` 可以只构建单个 ABI。 |
-| Windows | 编译内核用的 GCC（MinGW-w64），以及打包安装程序用的 [Inno Setup](https://jrsoftware.org/isinfo.php) 6。 |
-| macOS | Xcode 与 Node.js。脚本会通过 npm 安装 `appdmg`。 |
-| Linux | Debian 或 Ubuntu。脚本会用 apt 安装构建所需的软件包，并下载 `appimagetool`。 |
-
-其余选项可以运行 `dart setup.dart --help` 查看，例如用 `--targets` 只构建部分安装包格式。
-
-## 支持
-
-给仓库点一个 Star 是支持项目最简单的方式。问题讨论和更新通知请关注 [Telegram 频道](https://t.me/FlClash)，
-Bug 与功能建议请提交到 [GitHub Issues](https://github.com/chen08209/FlClash/issues)。
-
-<a href="https://star-history.com/#chen08209/FlClash&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chen08209/FlClash&type=Date&theme=dark">
-    <img alt="Star history" src="https://api.star-history.com/svg?repos=chen08209/FlClash&type=Date" width="640">
-  </picture>
-</a>
-
-## 许可证
-
-FlClash 以 [GPL-3.0 协议](LICENSE)发布。
+- **个人使用：** 本 Fork 主要体现个人偏好。欢迎提出功能需求和改进建议，但并不保证所有建议都会被采纳或实现。
+- **支持上游项目：** 本项目的实现建立在上游作者及贡献者的工作之上，请支持上游项目及其开发者。对于 FlClash_PE 特有的问题或修改所引入的缺陷，请优先在本项目反馈，避免将分叉版本的问题误归于上游项目或打扰上游维护者。
+- **免责声明：** 本项目不提供付费服务、代理节点或其他商业服务，也不以协助实施违法活动为目的。使用者应自行了解并遵守所在地适用的法律法规，并对自身的使用行为负责。
+- **更新频率：** 为控制维护成本，部分影响较小或非必要的上游版本可能会被跳过。其他更新则可能在上游发布新版本后不久推出。
+- **平台支持：** 考虑日常使用的平台以及本Fork修改的内容，目前仅维护 Windows 和 Linux 版本。新版(v0.9.1及之后)风格已经比较符合mac OS整体设计语言，所以暂无计划。至于 Android 版本，是否提供支持取决于后续是否决定使用不同的应用包名和签名密钥重新构建应用；否则，该版本与原版同时安装时会发生冲突。
