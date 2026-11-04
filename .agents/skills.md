@@ -14,6 +14,7 @@ match a task against the skill `name` and `description`, then load the full inst
 - `ui-performance`: dropped frames, slow pages and transitions, UI-thread and raster load, isolate decisions, and the
   probes that measure them.
 - `pre-commit-quality-review`: lightweight triage before commits, with scoped structural review and user decisions on concrete regressions.
+- `upstream-merge`: restoring this fork's own changes after an upstream FlClash merge, including the `plugins/prism_ui` submodule trap.
 
 ## Authoring Notes
 
