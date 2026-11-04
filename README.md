@@ -1,143 +1,58 @@
-<div align="center">
+# FlClash_PE
 
-<img src="assets/images/icon.png" alt="FlClash" width="88">
+[简体中文](README_zh_CN.md)
 
-# FlClash
+PE, stands for **Personal Edition**.  
+Based on the upstream project, this fork focuses on personal tweaks and customizations.
 
-A multi-platform proxy client based on ClashMeta. Simple to use, open source and ad-free.
+## Changes
 
-**English** · [简体中文](README_zh_CN.md)
+- **System Tray Icon:** ~~The upstream project's system tray icon is relatively small, and the differences between its various states are not sufficiently noticeable.~~ The upstream brought it back in v0.9.2. Therefore, it has been redesigned to more closely resemble the style of earlier versions (before v0.8.7*), with added support for adapting to the OS theme.
+- **Dashboard:** Dashboard widgets can now be edited and removed at any window size. By removing components and adjusting their positions, the dashboard can be restored to a layout and interaction style similar to those in earlier versions (v0.8.98 and earlier). The layout is also more suitable for smaller window size.
+- **Sidebar:** The hover area of the menu icon on the collapsed sidebar has been increased slightly. Previously, the menu icon was not sufficiently prominent, and its display area and clickable area were somewhat small. And this is also more suitable for smaller window size.
+- **i18n:** Korean, French, and Spanish language support has been removed. Personally, I believe these regions have very limited use cases for this software, and supporting too many languages is unnecessary.
 
-[![Release](https://img.shields.io/github/v/release/chen08209/FlClash?style=flat-square&label=release)](https://github.com/chen08209/FlClash/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/chen08209/FlClash/total?style=flat-square&logo=github)](https://github.com/chen08209/FlClash/releases)
-[![License](https://img.shields.io/github/license/chen08209/FlClash?style=flat-square)](LICENSE)
-[![Telegram](https://img.shields.io/badge/Telegram-channel-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/FlClash)
+## Preview
 
-[Website](https://chen08209.github.io/FlClash) · [Download](#download) · [Changelog](CHANGELOG.md) · [Build from source](#build-from-source)
-
-</div>
+The following screenshots show the dashboard and sidebar after the adjustments.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="snapshots/preview-dark.png">
-    <img alt="FlClash dashboard on a MacBook and a phone" src="snapshots/preview.png" width="92%">
+    <source media="(prefers-color-scheme: dark)" srcset="snapshots/preview.png">
+    <img alt="FlClash_PE dashboard and sidebar after modifications" src="snapshots/preview-dark.png" width="92%">
   </picture>
 </p>
 
-## Features
+## ToDo
 
-- **One app for Android, Windows, macOS and Linux**, with x64 and ARM64 builds on the desktop.
-- **mihomo (Clash.Meta) core** with rule routing, proxy groups, latency tests, system proxy and TUN mode.
-- **Profiles** from a subscription link or a file, with a built-in editor, override scripts, and custom rules,
-  proxies and proxy groups.
-- **Live views** of connections, requests, DNS queries and logs.
-- **Material You design with Apple-style interaction**: dynamic color, light and dark themes, continuous corners,
-  sheets that snap between heights, and layouts that adapt from phones to desktops.
-- **Backup and restore** through WebDAV or a local file.
-- **Platform touches**: a Quick Settings tile, per-app proxy and Android TV support on Android; a tray menu and
-  global hotkeys on the desktop.
-- **Open source and ad-free**, licensed under GPL-3.0.
+- [ ] **Profiles Layout Improvements**
 
-## Download
+  Some useful information was removed in newer versions (v0.9.1 and later). The plan is to redesign the configuration page layout using the newer styles and interactions while restoring some of the information displayed in earlier versions.
 
-Get the latest build from [GitHub Releases](https://github.com/chen08209/FlClash/releases/latest), or open the
-[website](https://chen08209.github.io/FlClash#download), which picks the right file for your device.
+  Priority: Medium. The current layout also looks quite good.
 
-| Platform | Packages | Notes |
-| --- | --- | --- |
-| Android | APK for `arm64-v8a`, `armeabi-v7a` and `x86_64` | Most phones use `arm64-v8a`. Also on the F-Droid repository below. |
-| Windows 10 and later | Installer (`.exe`) or portable `.zip`, for x64 and ARM64 | Pick ARM64 on Snapdragon and other ARM laptops. |
-| macOS 12 and later | DMG for Apple Silicon and Intel | Also on Homebrew. |
-| Linux | `.deb`, `.rpm` and AppImage, for x64 and ARM64 | See the tray note below. |
+- [ ] **Start Button Improvements**
 
-<p>
-  <a href="https://chen08209.github.io/FlClash-fdroid-repo/repo?fingerprint=789D6D32668712EF7672F9E58DEEB15FBD6DCEEC5AE7A4371EA72F2AAE8A12FD"><img alt="Get it on F-Droid" src="snapshots/get-it-on-fdroid.svg" height="56"></a>
-  <a href="https://github.com/chen08209/FlClash/releases/latest"><img alt="Get it on GitHub" src="snapshots/get-it-on-github.svg" height="56"></a>
-</p>
+  The start button on the dashboard in newer versions (v0.9.1 and later) is not prominent enough, and clicking it is less convenient. However, the upstream author's design considerations are also reasonable: as the UI evolves, using a Material Design-style Floating Action Button (FAB) no longer fits particularly well with the overall design language of the newer interface.
 
-**Homebrew**
+  Priority: Medium. I am still considering how to balance usability with design consistency.
 
-```bash
-brew tap chen08209/tap
-brew install --cask flclash
-```
+- [ ] **Test and Jump Buttons Improvements**
 
-**Linux tray icon**
+  Similar to the start button, the test and jump buttons on the Proxies page in newer versions (v0.9.1 and later) have become less convenient to use.
 
-The `.deb` package installs its own dependencies. With the AppImage or the `.rpm`, install the AyatanaAppIndicator
-library so the tray icon can show:
+  Priority: Medium. I am still exploring solutions that can improve the user experience without compromising the overall design style.
 
-```bash
-sudo apt-get install libayatana-appindicator3-1   # Debian and Ubuntu
-sudo dnf install libayatana-appindicator-gtk3     # Fedora
-```
+- [ ] **Restore the Material Design Style**
 
-**Unattended desktop**
+  I personally prefer the Material You design style. However, restoring this style would require a substantial amount of development work, and as the upstream project continues to evolve, the cost of compatibility and maintenance would continue to increase.
 
-FlClash starts the core only after the disclaimer is accepted. Where nobody can click it, such as a container, set
-`FLCLASH_ACCEPT_DISCLAIMER=1` in the app's environment to accept it on first launch.
+  Therefore, this task can only be assigned a low priority.
 
-## Usage
+## Additional Notes
 
-**Import a profile from a link.** Opening a link in this form imports the subscription into FlClash. The `clashmeta://`
-and `flclash://` schemes work the same way.
-
-```text
-clash://install-config?url=<URL-encoded subscription link>
-```
-
-**Automate on Android.** Tasker, MacroDroid and similar apps can start, stop or toggle the proxy by starting an
-activity with one of these actions:
-
-```text
-com.follow.clash.action.START
-com.follow.clash.action.STOP
-com.follow.clash.action.TOGGLE
-```
-
-From a computer, the same works over adb:
-
-```bash
-adb shell am start -a com.follow.clash.action.TOGGLE
-```
-
-## Build from source
-
-You need [Flutter](https://docs.flutter.dev/get-started/install) 3.47 (release builds use 3.47.6),
-[Go](https://go.dev/dl/) 1.27 and [Rust](https://rustup.rs/) installed through rustup. Each platform builds on its own
-host, except Android, which builds anywhere.
-
-```bash
-git clone --recursive https://github.com/chen08209/FlClash.git
-cd FlClash
-flutter pub get
-dart setup.dart android   # or windows, macos, linux
-```
-
-Packages land in `dist/`. The Go core and the Rust libraries are compiled as part of the Flutter build.
-
-| Platform | Also needed |
-| --- | --- |
-| Android | Android SDK with the NDK. Add `--arch arm64` to build a single ABI. |
-| Windows | GCC (MinGW-w64) for the core and [Inno Setup](https://jrsoftware.org/isinfo.php) 6 for the installer. |
-| macOS | Xcode and Node.js. The script installs `appdmg` through npm. |
-| Linux | Debian or Ubuntu. The script installs the build packages with apt and downloads `appimagetool`. |
-
-Run `dart setup.dart --help` for the remaining options, such as `--targets` to build only some package formats.
-
-## Support
-
-Starring the repository is the easiest way to support the project. Questions and announcements go to the
-[Telegram channel](https://t.me/FlClash); bugs and feature requests go to
-[GitHub Issues](https://github.com/chen08209/FlClash/issues).
-
-<a href="https://star-history.com/#chen08209/FlClash&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chen08209/FlClash&type=Date&theme=dark">
-    <img alt="Star history" src="https://api.star-history.com/svg?repos=chen08209/FlClash&type=Date" width="640">
-  </picture>
-</a>
-
-## License
-
-FlClash is released under the [GPL-3.0 license](LICENSE).
+- **Personal Use:** This fork primarily reflects personal preferences. Feature requests and improvement suggestions are welcome, but there is no guarantee that all suggestions will be accepted or implemented.
+- **Support the Upstream Project:** This project builds upon the work of the upstream author and contributors. Please support the upstream project and its developers. For issues specific to FlClash_PE or bugs introduced by its modifications, please report them here first to avoid misattributing fork-specific issues to the upstream project or disturbing its maintainers.
+- **Disclaimer:** This project does not provide paid services, proxy nodes, or other commercial services, nor is it intended to facilitate unlawful activities. Users are responsible for understanding and complying with the laws and regulations applicable in their jurisdictions and for their own use of the software.
+- **Update Frequency:** To keep maintenance costs manageable, some upstream releases with minor or non-essential changes may be skipped. Other updates may be released shortly after new upstream versions become available.
+- **Platform Support:** Considering the platforms used in my daily work and the scope of this fork's modifications, only Windows and Linux are currently maintained. The UI style introduced in newer versions (v0.9.1 and later) is already relatively consistent with the overall design language of macOS, so there are currently no plans to maintain a macOS version. As for Android, support will depend on whether a separate application package name and signing key are used to rebuild the app in the future; otherwise, installing this version alongside the original app would cause a conflict.
