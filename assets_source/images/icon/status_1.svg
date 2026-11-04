@@ -4,16 +4,16 @@
   <title>status_1</title>
   <defs>
     <linearGradient id="top" x1="0" y1="8.31" x2="0" y2="124.11" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#737D90"/>
-      <stop offset="1" stop-color="#656F81"/>
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
     </linearGradient>
     <linearGradient id="mid" x1="0" y1="96.53" x2="0" y2="177.59" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#8893A5"/>
-      <stop offset="1" stop-color="#7A8495"/>
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
     </linearGradient>
     <linearGradient id="dot" x1="0" y1="184.76" x2="0" y2="231.08" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A2ADC0"/>
-      <stop offset="1" stop-color="#929DB0"/>
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
     </linearGradient>
   </defs>
   <g stroke-width="46.32" stroke-linecap="round">

@@ -1,3 +1,5 @@
+import 'dart:ui' show Brightness;
+
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:fl_clash/providers/providers.dart';
@@ -58,6 +60,7 @@ class AppTray implements TrayPort {
     required bool isStart,
     required bool tunEnable,
     required bool safeMode,
+    required Brightness brightness,
     bool monochrome = true,
   }) {
     final status = switch ((
@@ -70,7 +73,12 @@ class AppTray implements TrayPort {
       (false, false, false) => 2,
       (false, false, true) => 3,
     };
-    return '${_trayIconDir(monochrome)}/status_$status.$_trayIconSuffix';
+    // macOS recolors the template icon itself; the bitmap trays need the dark
+    // glyph on a light shell, and only the idle icon ships that variant.
+    final name = status == 1 && !isMacOS && brightness == Brightness.light
+        ? 'status_1_b'
+        : 'status_$status';
+    return '${_trayIconDir(monochrome)}/$name.$_trayIconSuffix';
   }
 
   @override
@@ -101,6 +109,7 @@ class AppTray implements TrayPort {
             tunEnable: trayState.tunEnable,
             safeMode: trayState.safeMode,
             monochrome: trayState.monochromeTrayIcon,
+            brightness: read(systemBrightnessProvider),
           ),
           isTemplate: _isTemplate(trayState.monochromeTrayIcon),
           size: isMacOS ? 18 : 16,
