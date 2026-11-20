@@ -15,14 +15,10 @@ env:
   BRANCH_CACHE: ${{ !startsWith(github.ref, 'refs/tags/') }}
   FLUTTER_VERSION: '3.50.0'
   GO_VERSION: '1.27.1'
-  NDK_VERSION: r28c
 
 jobs:
   dart:
     name: Dart
-    # A private copy pays for its Actions minutes, so it runs the checks only when
-    # started by hand.
-    if: &checks github.event_name == 'workflow_dispatch' || !github.event.repository.private
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -69,10 +65,6 @@ jobs:
         run: |
           yq -i '.hooks.user_defines.setup.build_assets = false' pubspec.yaml
 
-      - name: Verify changelog
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: dart run tool/changelog.dart verify
-
       - name: Run tests
         run: dart run tool/test.dart -- --reporter expanded --coverage
 
@@ -81,7 +73,6 @@ jobs:
 
   plugins:
     name: Plugins
-    if: *checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -106,77 +97,8 @@ jobs:
           dart analyze
           dart test
 
-  desktop:
-    name: Desktop ${{ matrix.platform }}
-    if: (github.event_name == 'workflow_dispatch' || !github.event.repository.private) && !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux
-            os: ubuntu-latest
-          - platform: windows
-            os: windows-2022
-          - platform: macos
-            os: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: |
-            core/go.sum
-            plugins/setup/setup_hooks/lib/src/go_builder.dart
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          key: desktop-${{ matrix.platform }}
-          workspaces: |
-            services/helper
-            plugins/rust_api/rust
-          cache-directories: .dart_tool/hooks_runner
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      - name: Install Linux build dependencies
-        if: matrix.platform == 'linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build libgtk-3-dev libsecret-1-dev
-
-      - name: Setup Xcode
-        if: matrix.platform == 'macos'
-        run: |
-          sudo xcode-select -s /Applications/Xcode_26.3.app || sudo xcode-select -s /Applications/Xcode_26.2.app
-          xcodebuild -version
-
-      - name: Enable git long paths (Windows)
-        if: matrix.platform == 'windows'
-        run: git config --global core.longpaths true
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      # Compiles the desktop runners and the native plugin code that only the
-      # tagged release matrix built before; the bundle itself is discarded.
-      - name: Build debug bundle
-        run: flutter build ${{ matrix.platform }} --debug
-
   go:
     name: Go core
-    if: *checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -208,84 +130,8 @@ jobs:
           go vet . ./cmd/...
           GOOS=linux go vet ./platform
 
-      - name: Validate the Android core library
-        working-directory: core
-        env:
-          CGO_ENABLED: 0
-        run: |
-          tags="$(sed -n 's/^tags: *//p' ../build_config.yaml)"
-          test -n "$tags" || { echo 'Could not read tags from build_config.yaml' >&2; exit 1; }
-          GOOS=android GOARCH=arm64 go vet "-tags=$tags" . ./mobile ./tun ./platform
-
-  android:
-    name: Android unit tests
-    if: *checks
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache: ${{ env.BRANCH_CACHE }}
-          cache-dependency-path: |
-            core/go.sum
-            android/core/build.gradle.kts
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: ${{ env.BRANCH_CACHE }}
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Setup NDK
-        uses: nttld/setup-ndk@v1
-        id: ndk
-        with:
-          ndk-version: ${{ env.NDK_VERSION }}
-          link-to-sdk: true
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
-
-      - name: Run Android unit tests
-        working-directory: android
-        env:
-          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
-        run: |
-          {
-            echo "flutter.sdk=$FLUTTER_ROOT"
-            echo "sdk.dir=$ANDROID_HOME"
-          } > local.properties
-          wrapper="$FLUTTER_ROOT/bin/cache/artifacts/gradle_wrapper"
-          test -d "$wrapper" || flutter precache
-          cp -R "$wrapper/." .
-          chmod +x gradlew
-          # No JVM unit test loads the Core or the Flutter build, but `:core` compiles against
-          # the gomobile AAR, so one ABI of it is built.
-          ./gradlew :common:testDebugUnitTest :service:testDebugUnitTest :app:testDebugUnitTest \
-            -Ptarget-platform=android-arm64 \
-            -x :app:compileFlutterBuildDebug -x :app:copyFlutterAssetsDebug
-
   rust:
     name: Rust
-    if: *checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -316,7 +162,6 @@ jobs:
 
   windows-helper-test:
     name: Windows helper test
-    if: *checks
     runs-on: windows-2022
     steps:
       - name: Checkout
@@ -337,7 +182,7 @@ jobs:
   version:
     name: Version
     # Releases publish where the release links point: the public repository.
-    if: &release github.repository == 'chen08209/FlClash' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: &release github.repository == 'JustAndyGu/FlClash_PE' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.tag.outputs.version }}
@@ -372,22 +217,15 @@ jobs:
     needs: version
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - platform: android
-            os: ubuntu-latest
           - platform: windows
             os: Windows-2022
             arch: amd64
           - platform: linux
             os: ubuntu-22.04
             arch: amd64
-          - platform: macos
-            os: macos-15-intel
-            arch: amd64
-          - platform: macos
-            os: macos-latest
-            arch: arm64
           - platform: windows
             os: windows-11-arm
             arch: arm64
@@ -420,26 +258,12 @@ jobs:
           sed "s/^version: .*/version: $VERSION/" pubspec.yaml > pubspec.yaml.tmp
           mv pubspec.yaml.tmp pubspec.yaml
 
-      - name: Setup Android Signing
-        if: startsWith(matrix.platform,'android')
-        run: |
-          echo "${{ secrets.KEYSTORE }}" | base64 --decode > android/app/keystore.jks
-          {
-            echo "keyAlias=${{ secrets.KEY_ALIAS }}"
-            echo "storePassword=${{ secrets.STORE_PASSWORD }}"
-            echo "keyPassword=${{ secrets.KEY_PASSWORD }}"
-          } >> android/local.properties
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: ${{ env.BRANCH_CACHE }}
           cache-dependency-path: core/go.sum
-
-      - name: Setup Gradle
-        if: startsWith(matrix.platform,'android')
-        uses: gradle/actions/setup-gradle@v6
 
       - name: Enable git long paths (Windows)
         if: startsWith(matrix.os, 'windows')
@@ -453,21 +277,6 @@ jobs:
           channel: ${{ matrix.flutter-channel || 'stable' }}
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: ${{ env.BRANCH_CACHE }}
-
-      - name: Setup Xcode
-        if: startsWith(matrix.platform,'macos')
-        run: |
-          sudo xcode-select -s /Applications/Xcode_26.3.app || sudo xcode-select -s /Applications/Xcode_26.2.app
-          xcodebuild -version
-
-      - name: Setup NDK
-        if: startsWith(matrix.platform,'android')
-        uses: nttld/setup-ndk@v1
-        id: build-ndk
-        with:
-          ndk-version: ${{ env.NDK_VERSION }}
-          add-to-path: true
-          link-to-sdk: true
 
       - name: Get Flutter Dependency
         run: |
@@ -487,10 +296,6 @@ jobs:
           echo "$CA_BUNDLE_SHA256  $bundle" | sha256sum -c -
 
       - name: Setup
-        env:
-          ANDROID_NDK_HOME: ${{ steps.build-ndk.outputs.ndk-path }}
-          # The setup hook builds the Core for the host slice only, so an x86_64 slice in the arm64 app cannot run.
-          FLUTTER_MACOS_ARM64_ONLY: ${{ matrix.platform == 'macos' && matrix.arch == 'arm64' }}
         # `dart run` first runs every build hook for this runner, Linux GTK and the Go core included; the packager builds them for the target itself.
         run: dart tool/package.dart ${{ matrix.platform }} ${{ env.IS_STABLE == 'true' && '--env stable' || '' }} -v
 
@@ -504,16 +309,8 @@ jobs:
   upload:
     permissions:
       contents: write
-    needs: [ version, build, dart, plugins, go, android, rust, windows-helper-test ]
+    needs: [ version, build, dart, plugins, go, rust, windows-helper-test ]
     runs-on: ubuntu-latest
-    services:
-      telegram-bot-api:
-        image: aiogram/telegram-bot-api:latest
-        env:
-          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-        ports:
-          - 8081:8081
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -550,37 +347,12 @@ jobs:
       - name: Merge the build manifests
         run: dart run tool/package.dart merge artifacts/* --out dist
 
-      - name: Generate release notes
-        shell: bash
-        env:
-          IS_STABLE: ${{ env.IS_STABLE }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          target=()
-          if [[ "$IS_STABLE" == 'true' ]]; then
-            target=(--tag "$TAG")
-          else
-            dart run tool/changelog.dart build --unreleased
-          fi
-          dart run tool/changelog.dart render release "${target[@]}" --out release.md
-          dart run tool/changelog.dart render telegram "${target[@]}" --out telegram.md
-
-      - name: Push to telegram
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TAG: ${{ github.ref_name }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
-          python release_telegram.py
-
-      - name: Patch release.md
+      - name: Render release body
         run: |
           line=$(jq -r '.artifacts[0].line' dist/manifest.json)
           version=$(jq -r '.artifacts[0].version' dist/manifest.json)
           sed -e "s|TAG|${{ github.ref_name }}|g" -e "s|LINE|$line|g" -e "s|VERSION|$version|g" \
-            ./.github/release_template.md >> release.md
+            ./.github/release_template.md > release.md
 
       # Dev-line apps released before these names update from the old names; keep until the user says stop.
       - name: Copy the Windows installers and APKs under their old names
@@ -606,59 +378,3 @@ jobs:
         with:
           files: ./dist/*
           body_path: './release.md'
-
-      - name: Create Homebrew Cask Source Dir
-        if: ${{ env.IS_STABLE == 'true' }}
-        run: |
-          dmg() {
-            jq -er --arg arch "$1" '.artifacts[] | select(.os == "macos" and .arch == $arch)' dist/manifest.json
-          }
-          line=$(dmg arm64 | jq -r .line)
-          version=$(dmg arm64 | jq -r .version)
-          arm_sha=$(dmg arm64 | jq -r .sha256)
-          amd_sha=$(dmg amd64 | jq -r .sha256)
-
-          mkdir -p ./brew/Casks
-          sed \
-            -e "s|LINE|$line|g" \
-            -e "s|VERSION|$version|g" \
-            -e "s|ARM_SHA256|$arm_sha|g" \
-            -e "s|AMD_SHA256|$amd_sha|g" \
-            ./.github/homebrew_cask_template.rb > ./brew/Casks/flclash.rb
-
-      - name: Push to Homebrew tap
-        if: ${{ env.IS_STABLE == 'true' }}
-        uses: cpina/github-action-push-to-another-repository@v1.7.2
-        env:
-          SSH_DEPLOY_KEY: ${{ secrets.HOMEBREW_SSH_DEPLOY_KEY }}
-        with:
-          source-directory: ./brew/
-          destination-github-username: chen08209
-          destination-repository-name: homebrew-tap
-          user-name: 'chen08029'
-          user-email: 'chen08209@gmail.com'
-          target-branch: main
-          commit-message: Update Homebrew cask from ${{ github.ref_name }}
-          target-directory: /
-
-      - name: Create Fdroid Source Dir
-        if: ${{ env.IS_STABLE == 'true' }}
-        run: |
-          mkdir -p ./tmp
-          apk=$(jq -er '.artifacts[] | select(.os == "android" and .arch == "arm64") | .name' dist/manifest.json)
-          cp "./dist/$apk" ./tmp/
-
-      - name: Push to fdroid repo
-        if: ${{ env.IS_STABLE == 'true' }}
-        uses: cpina/github-action-push-to-another-repository@v1.7.2
-        env:
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-        with:
-          source-directory: ./tmp/
-          destination-github-username: chen08209
-          destination-repository-name: FlClash-fdroid-repo
-          user-name: 'chen08029'
-          user-email: 'chen08209@gmail.com'
-          target-branch: main
-          commit-message: Update from ${{ github.ref_name }}
-          target-directory: /tmp/
