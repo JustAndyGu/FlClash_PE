@@ -426,22 +426,29 @@ void main() {
     await teardown(tester);
   });
 
-  testWidgets('a landscape phone gets the fixed grid without an edit mode', (
+  testWidgets('a landscape phone gets the fixed grid and its editor', (
     tester,
   ) async {
-    seed(const [DashboardWidget.currentOutbound, DashboardWidget.profiles]);
+    seed(const [
+      DashboardWidget.currentOutbound,
+      DashboardWidget.outboundMode,
+      DashboardWidget.profiles,
+    ]);
     await pumpDashboard(tester, size: const Size(915, 412));
 
-    expect(find.byTooltip('Edit dashboard'), findsNothing);
     expect(find.byType(DashboardEditor), findsNothing);
     expect(find.byType(OutboundModeBar), findsOneWidget);
+    expect(find.byTooltip('Edit dashboard'), findsOneWidget);
+
+    await edit(tester);
+
+    expect(find.byType(DashboardEditor), findsOneWidget);
+    expect(tester.getSize(find.byType(CurrentOutboundCard)).width, 560);
 
     await teardown(tester);
   });
 
-  testWidgets('turning to the fixed grid ends editing for good', (
-    tester,
-  ) async {
+  testWidgets('a resize leaves the editor as it stands', (tester) async {
     seed(const [DashboardWidget.currentOutbound, DashboardWidget.profiles]);
     await pumpEditor(tester);
     expect(find.byType(DashboardEditor), findsOneWidget);
@@ -453,25 +460,128 @@ void main() {
     }
 
     await resize(const Size(915, 412));
-    expect(find.byType(DashboardEditor), findsNothing);
+    expect(find.byType(DashboardEditor), findsOneWidget);
     await resize(const Size(412, 1400));
+    expect(find.byType(DashboardEditor), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Done'));
+    await settle(tester);
+
     expect(find.byType(DashboardEditor), findsNothing);
     expect(find.byTooltip('Edit dashboard'), findsOneWidget);
 
     await teardown(tester);
   });
 
-  testWidgets('the desktop grid keeps its fixed layout without an edit mode', (
-    tester,
-  ) async {
+  testWidgets('the desktop grid edits as the card column', (tester) async {
+    seed(const [DashboardWidget.currentOutbound, DashboardWidget.profiles]);
     await pumpDashboard(
       tester,
       platform: SupportPlatform.MacOS,
       size: const Size(1220, 900),
     );
 
-    expect(find.byTooltip('Edit dashboard'), findsNothing);
     expect(find.byType(DashboardEditor), findsNothing);
+    expect(find.byTooltip('Edit dashboard'), findsOneWidget);
+
+    await edit(tester);
+
+    expect(find.byType(DashboardEditor), findsOneWidget);
+    expect(tester.getSize(find.byType(CurrentOutboundCard)).width, 560);
+
+    await tester.tap(find.byTooltip('Done'));
+    await settle(tester);
+
+    expect(find.byType(DashboardEditor), findsNothing);
+    expect(tester.getSize(find.byType(CurrentOutboundCard)).width, isNot(560));
+
+    await teardown(tester);
+  });
+
+  testWidgets('a desktop drag moves a card without a hold', (tester) async {
+    seed(const [
+      DashboardWidget.currentOutbound,
+      DashboardWidget.networkSpeed,
+      DashboardWidget.memoryInfo,
+    ]);
+    await pumpEditor(
+      tester,
+      platform: SupportPlatform.Linux,
+      size: const Size(1220, 900),
+    );
+
+    final card = find.byType(MemoryInfo);
+    final rise =
+        top(tester, card) - top(tester, find.byType(NetworkSpeedCard)) - 10;
+    final gesture = await tester.startGesture(
+      tester.getCenter(card),
+      kind: PointerDeviceKind.mouse,
+    );
+    await tester.pump(const Duration(milliseconds: 20));
+    for (var step = 0; step < 6; step++) {
+      await gesture.moveBy(Offset(0, -rise / 6));
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    await gesture.up();
+    await settle(tester);
+
+    expect(saved(), const [
+      DashboardWidget.currentOutbound,
+      DashboardWidget.memoryInfo,
+      DashboardWidget.networkSpeed,
+    ]);
+
+    await teardown(tester);
+  });
+
+  testWidgets('the desktop rows follow the saved order', (tester) async {
+    seed(const [
+      DashboardWidget.currentOutbound,
+      DashboardWidget.networkSpeed,
+      DashboardWidget.profiles,
+      DashboardWidget.intranetIp,
+    ]);
+    await pumpDashboard(
+      tester,
+      platform: SupportPlatform.MacOS,
+      size: const Size(1220, 824),
+    );
+
+    final profile = tester.getRect(find.byType(ProfilesCard));
+    final intranet = tester.getRect(find.byType(IntranetIpCard));
+    expect(profile.top, intranet.top);
+    expect(profile.left, lessThan(intranet.left));
+    expect(find.byType(ConnectionsTableCard), findsNothing);
+    expect(find.byType(ConnectionStatsCard), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    await teardown(tester);
+  });
+
+  testWidgets('a card moved past a taller one keeps the place it was given', (
+    tester,
+  ) async {
+    seed(const [
+      DashboardWidget.outboundMode,
+      DashboardWidget.currentOutbound,
+      DashboardWidget.profiles,
+      DashboardWidget.intranetIp,
+    ]);
+    await pumpDashboard(
+      tester,
+      platform: SupportPlatform.MacOS,
+      size: const Size(1220, 824),
+    );
+
+    expect(
+      top(tester, find.byType(OutboundModeBar)),
+      lessThan(top(tester, find.byType(CurrentOutboundCard))),
+    );
+    expect(
+      top(tester, find.byType(CurrentOutboundCard)),
+      lessThan(top(tester, find.byType(ProfilesCard))),
+    );
+    expect(tester.takeException(), isNull);
 
     await teardown(tester);
   });
