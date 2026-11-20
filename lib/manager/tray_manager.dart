@@ -35,6 +35,13 @@ class _TrayManagerState extends ConsumerState<TrayManager> {
         _requestUpdate();
       }
     });
+    if (!system.isMacOS) {
+      ref.listenManual(systemBrightnessProvider, (prev, next) {
+        if (prev != next) {
+          _requestUpdate();
+        }
+      });
+    }
     ref.listenManual(loadedLocaleProvider, (prev, next) {
       if (prev != null && prev != next) {
         _requestUpdate();
